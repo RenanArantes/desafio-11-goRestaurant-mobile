@@ -73,26 +73,47 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      try {
+        const response = await api.get('foods', {
+          params: {
+            id: routeParams.id,
+          },
+        });
+
+        setFood(response.data[0]);
+        setExtras(
+          response.data[0].extras.map(extra => ({ ...extra, quantity: 0 })),
+        );
+      } catch (err) {
+        console.log(err);
+      }
     }
 
     loadFood();
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    // Increment extra quantity
+    extras.forEach(extra => {
+      if (extra.id === id) {
+        extra.quantity += 1;
+      }
+    });
+
+    console.log(extras);
   }
 
   function handleDecrementExtra(id: number): void {
-    // Decrement extra quantity
+    extras.forEach(extra => {
+      extra.id === id && extra.quantity - 1;
+    });
   }
 
   function handleIncrementFood(): void {
-    // Increment food quantity
+    setFoodQuantity(foodQuantity + 1);
   }
 
   function handleDecrementFood(): void {
-    // Decrement food quantity
+    setFoodQuantity(foodQuantity - 1);
   }
 
   const toggleFavorite = useCallback(() => {
