@@ -65,12 +65,17 @@ const Dashboard: React.FC = () => {
       try {
         const response = await api.get('foods', {
           params: {
-            category: selectedCategory,
-            name: searchValue !== '' ? searchValue : undefined,
+            category_like: selectedCategory,
+            name_like: searchValue !== '' ? searchValue : undefined,
           },
         });
 
-        setFoods(response.data);
+        setFoods(
+          response.data.map(food => ({
+            ...food,
+            formattedPrice: formatValue(food.price),
+          })),
+        );
       } catch (err) {
         console.log(err);
       }

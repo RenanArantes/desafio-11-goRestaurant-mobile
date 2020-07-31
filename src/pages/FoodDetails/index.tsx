@@ -74,15 +74,18 @@ const FoodDetails: React.FC = () => {
   useEffect(() => {
     async function loadFood(): Promise<void> {
       try {
-        const response = await api.get('foods', {
-          params: {
-            id: routeParams.id,
-          },
-        });
+        const response = await api.get(`foods/${routeParams.id}`);
 
-        setFood(response.data[0]);
+        const responseFood = response.data;
+
+        const formattedFood = {
+          ...responseFood,
+          formattedPrice: formatValue(responseFood.price),
+        };
+
+        setFood(formattedFood);
         setExtras(
-          response.data[0].extras.map(extra => ({ ...extra, quantity: 0 })),
+          formattedFood.extras.map(extra => ({ ...extra, quantity: 0 })),
         );
       } catch (err) {
         console.log(err);
@@ -93,19 +96,23 @@ const FoodDetails: React.FC = () => {
   }, [routeParams]);
 
   function handleIncrementExtra(id: number): void {
-    extras.forEach(extra => {
-      if (extra.id === id) {
-        extra.quantity += 1;
-      }
-    });
+    const extraAdded = extras.find(extra => extra.id === id);
 
-    console.log(extras);
+    extraAdded && (extraAdded.quantity += 1);
+
+    const updatedExtras = extras.filter(extra => extra.id !== id);
+
+    setExtras([...updatedExtras, extraAdded]);
   }
 
   function handleDecrementExtra(id: number): void {
-    extras.forEach(extra => {
-      extra.id === id && extra.quantity - 1;
-    });
+    const extraAdded = extras.find(extra => extra.id === id);
+
+    extraAdded && (extraAdded.quantity -= 1);
+
+    const updatedExtras = extras.filter(extra => extra.id !== id);
+
+    setExtras([...updatedExtras, extraAdded]);
   }
 
   function handleIncrementFood(): void {
@@ -113,19 +120,32 @@ const FoodDetails: React.FC = () => {
   }
 
   function handleDecrementFood(): void {
-    setFoodQuantity(foodQuantity - 1);
+    foodQuantity > 1 && setFoodQuantity(foodQuantity - 1);
   }
 
   const toggleFavorite = useCallback(() => {
-    // Toggle if food is favorite or not
+    setIsFavorite(!isFavorite);
   }, [isFavorite, food]);
 
   const cartTotal = useMemo(() => {
-    // Calculate cartTotal
+    let totalExtras = 0;
+    extras.forEach(extra => {
+      totalExtras += extra.value * extra.quantity;
+      return totalExtras;
+    });
+
+    const totalFood = food.price * foodQuantity;
+
+    return totalFood + totalExtras;
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
-    // Finish the order and save on the API
+    const newExtra = extras;
+
+    const response = await api.post('/orders', {
+      ...food,
+      extras: newExtra,
+    });
   }
 
   // Calculate the correct icon name
@@ -200,7 +220,9 @@ const FoodDetails: React.FC = () => {
         <TotalContainer>
           <Title>Total do pedido</Title>
           <PriceButtonContainer>
-            <TotalPrice testID="cart-total">{cartTotal}</TotalPrice>
+            <TotalPrice testID="cart-total">
+              {formatValue(cartTotal)}
+            </TotalPrice>
             <QuantityContainer>
               <Icon
                 size={15}
